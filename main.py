@@ -15,9 +15,9 @@ from models import TSN
 from transforms import *
 from opts import parser
 
+train_logs_file = './logs/saag001_bni_arp_7_train_log.csv' 
 best_prec1 = 0
-train_logs_file = './logs/hmdb51_bni_arp_3_train_log.csv' 
-val_logs_file = './logs/hmdb51_bni_arp_3_val_log.csv'
+val_logs_file = './logs/saag001_bni_arp_7_val_log.csv'
 
 
 def main():
@@ -30,12 +30,17 @@ def main():
         num_class = 51
     elif args.dataset == 'kinetics':
         num_class = 400
+    elif args.dataset == 'saag01':
+        num_class = 2
     else:
-        raise ValueError('Unknown dataset '+args.dataset)
+        raise ValueError('Unknown dataset ' + args.dataset)
 
     model = TSN(num_class, args.num_segments, args.modality,
                 base_model=args.arch,
-                consensus_type=args.consensus_type, dropout=args.dropout, partial_bn=not args.no_partialbn, pretrained_on_kinetics = args.pretrained_on_kinetics)
+                consensus_type=args.consensus_type,
+                dropout=args.dropout,
+                partial_bn=not args.no_partialbn,
+                pretrained_on_kinetics = args.pretrained_on_kinetics)
 
     crop_size = model.crop_size
     scale_size = model.scale_size
@@ -84,7 +89,8 @@ def main():
                    ]),
                    custom_prefix = args.custom_prefix),
         batch_size=args.batch_size, shuffle=True,
-        num_workers=args.workers, pin_memory=True)
+        num_workers=args.workers, pin_memory=True,
+        drop_last=True)
 
     val_loader = torch.utils.data.DataLoader(
         TSNDataSet("", args.val_list, num_segments=args.num_segments,
@@ -101,7 +107,8 @@ def main():
                     ]),
                    custom_prefix = args.custom_prefix),
         batch_size=args.batch_size, shuffle=False,
-        num_workers=args.workers, pin_memory=True)
+        num_workers=args.workers, pin_memory=True,
+        drop_last=True)
 
     # define loss function (criterion) and optimizer
     if args.loss_type == 'nll':
@@ -173,10 +180,9 @@ def train(train_loader, model, criterion, optimizer, epoch):
         output = model(input_var)
         loss = criterion(output, target_var)
         # measure accuracy and record loss
-        prec1, prec5 = accuracy(output.data, target, topk=(1,5))
-        # print("LOSS.DATA", loss.data)
+        prec1, prec5 = accuracy(output.data, target, topk=(1,2))
         losses.update(loss.data, input.size(0))
-        # print("PREC1", prec1.item())
+
         top1.update(prec1.item(), input.size(0))
         top5.update(prec5.item(), input.size(0))
 
@@ -232,7 +238,7 @@ def validate(val_loader, model, criterion, iter, logger=None):
         loss = criterion(output, target_var)
 
         # measure accuracy and record loss
-        prec1, prec5 = accuracy(output.data, target, topk=(1,5))
+        prec1, prec5 = accuracy(output.data, target, topk=(1,2))
 
         losses.update(loss.data, input.size(0))
         top1.update(prec1.item(), input.size(0))
@@ -257,7 +263,7 @@ def validate(val_loader, model, criterion, iter, logger=None):
         Logits.append(output.cpu().detach().numpy())
 
     stacked = np.concatenate(Logits)
-    np.save("scores/hmdb51_arp_bni_3_scores_{:03d}.npy".format(iter),
+    np.save("scores/saag01_bni_arp_seg_3_scores_split_0_{:05d}.npy".format(iter),
         stacked)
 
     print(('Testing Results: Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Loss {loss.avg:.5f}'

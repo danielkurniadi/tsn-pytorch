@@ -6,10 +6,37 @@ import os.path
 import numpy as np
 from numpy.random import randint
 
+
+def abs_listdir(directory, prefix=None):
+    def abspath_join(directory, path):
+        return os.path.abspath(os.path.join(directory, path))
+
+    if prefix:
+        filepaths = [
+            abspath_join(directory, path)
+            for path in os.listdir(directory)
+            if path.startswith(prefix)
+        ]
+
+    else:
+        filepaths = [
+            abspath_join(directory, path)
+            for path in os.listdir(directory)
+        ]
+    
+    return filepaths
+
+
 class VideoRecord(object):
-    def __init__(self, row, custom = False):
+    def __init__(self, row, custom = False, prefix=None):
         self._data = row
         self.custom = custom
+
+        filepaths = abs_listdir(self._data[0], prefix=prefix)
+        self.__num_frames = len(filepaths)
+
+        if self.__num_frames == 0:
+            print("No Frames %s, %s" %(prefix, self.path))
 
     @property
     def path(self):
@@ -18,13 +45,13 @@ class VideoRecord(object):
     @property
     def num_frames(self):
         if self.custom:
-            return int(self._data[1]) - 9
+            return int(self.__num_frames) - 9
         else:
-            return int(self._data[1]) - 1
+            return int(self.__num_frames) - 1
 
     @property
     def label(self):
-        return int(self._data[2])
+        return int(self._data[-1])
 
 
 class TSNDataSet(data.Dataset):
@@ -66,10 +93,14 @@ class TSNDataSet(data.Dataset):
             return [x_img, y_img]
 
     def _parse_list(self):
+        prefix = self.modality.lower()
+        if prefix == 'flow':
+            prefix = prefix + '_x'
+
         if self.image_tmpl.startswith('rp'):
-            self.video_list = [VideoRecord(x.strip().split(' '), True) for x in open(self.list_file)]
+            self.video_list = [VideoRecord(x.strip().split(' '), True, prefix=prefix) for x in open(self.list_file)]
         else:
-            self.video_list = [VideoRecord(x.strip().split(' '), False) for x in open(self.list_file)]
+            self.video_list = [VideoRecord(x.strip().split(' '), False, prefix=prefix) for x in open(self.list_file)]
 
     def _sample_indices(self, record):
         """

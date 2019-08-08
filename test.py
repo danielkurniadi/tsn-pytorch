@@ -1,7 +1,7 @@
 """
 Usage:
     python3 test.py <DATASET> <MODALITY> <TEST_SPLIT_LIST> <CHECKPOINTS_FILE> \
-        <ARCH> <SAVE_SCORES>
+        --arch <ARCH> --save_scores <SAVE_SCORES>
 """
 
 import argparse
@@ -23,13 +23,13 @@ def options():
     # options`
     parser = argparse.ArgumentParser(
         description="Standard video-level testing")
-    parser.add_argument('dataset', type=str, choices=['ucf101', 'hmdb51', 'kinetics'])
+    parser.add_argument('dataset', type=str, choices=['ucf101', 'hmdb51', 'kinetics', 'saag01'])
     parser.add_argument('modality', type=str, choices=['RGB', 'Flow', 'RGBDiff'])
     parser.add_argument('test_list', type=str)
     parser.add_argument('checkpoint', type=str)
     parser.add_argument('--arch', type=str, default="resnet101")
     parser.add_argument('--save_scores', type=str, default=None)
-    parser.add_argument('--num_segments', type=int, default=25)
+    parser.add_argument('--num_segments', type=int, default=3)
     parser.add_argument('--max_num', type=int, default=-1)
     parser.add_argument('--test_crops', type=int, default=10)
     parser.add_argument('--input_size', type=int, default=224)
@@ -44,7 +44,7 @@ def options():
     parser.add_argument('--ext', type=str, default='.jpg')
     parser.add_argument('--flow_prefix', type=str, default='flow')
     parser.add_argument('--custom_prefix', type=str, default='')
-    parser.add_argument('-b', '--batch_size', type=int, default=48)
+    parser.add_argument('-b', '--batch_size', type=int, default=5)
     parser.add_argument('--print_freq', type=int, default=5)
 
     return parser
@@ -93,19 +93,18 @@ def test(model, test_loader, args):
     model.eval()
 
     end = time.time()
-    Precs1 = []
-    Precs5 = []
+    Logits = []
     for i, (input, target) in enumerate(test_loader):
         target = target.cuda(async=True)
         input_var = torch.autograd.Variable(input, volatile=True)
         target_var = torch.autograd.Variable(target, volatile=True)
-
-        print(input_var.size())
         # compute output
         output = model(input_var)
 
+        print(output.size())
+
         # precision
-        prec1, prec5 = accuracy(output.data, target, topk=(1,5))
+        prec1, prec5 = accuracy(output.data, target, topk=(1,2))
 
         top1.update(prec1.item(), input.size(0))
         top5.update(prec5.item(), input.size(0))
@@ -122,20 +121,10 @@ def test(model, test_loader, args):
                    i, len(test_loader), batch_time=batch_time,
                    top1=top1, top5=top5)))
 
-        Precs1.append(top1.val)
-        Precs5.append(top5.val)
-
-    np.save(
-        "scores/{}_{}_{}_{}_{:03d}_precs1.npy"\
-        .format(args.dataset, args.arch, args.modality, args.num_segments, i),
-        np.array(Precs1)
-    )
-
-    np.save(
-        "scores/{}_{}_{}_{}_{:03d}_precs5.npy"\
-        .format(args.dataset, args.arch, args.modality, args.num_segments, i),
-        np.array(Precs5)
-    )
+        Logits.append(output.cpu().detach().numpy())
+    
+    stacked = np.concatenate(Logits)
+    np.save("scores/saag01_bni_flow_seg_3_test_scores.npy", stacked)
 
     print(('Testing Results: Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} '
           .format(top1=top1, top5=top5)))
@@ -151,6 +140,8 @@ def main():
         num_class = 51
     elif args.dataset == 'kinetics':
         num_class = 400
+    elif args.dataset == 'saag01':
+        num_class = 2
     else:
         raise ValueError('Unknown dataset '+args.dataset)
 
