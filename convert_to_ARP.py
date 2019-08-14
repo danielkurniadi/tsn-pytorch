@@ -2,8 +2,6 @@ import os
 import click
 from click import echo
 
-from multiprocessing import current_process
-
 # Computation libs
 import numpy as np
 import cv2
