@@ -30,9 +30,15 @@ To convert video dataset to approximated rank pooled frames, use the `convert_to
 The command to reproduce the Rank pooling preprocessing is as follows:
 
 ```bash
-python3 <SOURCE_VIDEO_DIR> <OUTPUT_VIDEO_DIR> -j 8 --img_ext .jpg
+python3 <SOURCE_VIDEO_DIR> <OUTPUT_VIDEO_DIR> -j 8 --buffer_size 24 --img_ext .jpg
 
 ```
+
+*  SOURCE_VIDEO_DIR: your video dataset folder to be preprocessed 
+*  OUTPUT_VIDEO_DIR: your output folder for preprocessed result
+*  -j or --n_jobs: number of processes
+* -b or --buffer_size: step size of video frames, default=24
+* --img_ext: img extension format for output frames; choice: [.jpg/.png/.jpeg]
 
 Note that it assumes your video dataset folder is structured as follows:
 ```
@@ -79,6 +85,12 @@ Assuming preprocessing has been done to your `OUTPUT_VIDEO_DIR`, you can run cro
 ```
 python3 <OUTPUT_VIDEO_DIR> <FOLDER_FOR_SPLIT_FILES> --n_splits 5 --split_prefix mydata_split
 ```
+
+*  OUTPUT_VIDEO_DIR: your output folder for preprocessed result
+* FOLDER_FOR_SPLIT_FILES: folder to write split files
+*  -k or --n_splits: number of splitting
+* --split_prefix: naming prefix to prepend on split files
+
 
 Note that `<OUTPUT_VIDEO_DIR>` can be any dataset folder with the same structure you prefer to train on.
 

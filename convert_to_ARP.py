@@ -12,9 +12,9 @@ from multiprocessing import Pool, current_process
 
 # File utilities
 from utils import (
-    safe_mkdir,
-    search_files_recursively,
-    get_basename,
+	safe_mkdir,
+	search_files_recursively,
+	get_basename,
 	clean_filename
 )
 
@@ -122,54 +122,58 @@ def run_video_appx_rank_pooling(
 
 
 def video_appxRankPooling(
-    source,
-    dest,
-    n_jobs,
-    img_ext
+	source,
+	dest,
+	n_jobs,
+	buffer_size,
+	img_ext
 ):
-    print(". Executing appx_rank_pool on video...")
-    safe_mkdir(dest)
-    
-    for class_folder in os.listdir(source):     # run appx rank pool for each video in all class_folder
-        video_files = search_files_recursively(
-            os.path.join(source, class_folder)
-        )
-        outfolder = os.path.join(dest, class_folder)
+	print(". Executing appx_rank_pool on video...")
+	safe_mkdir(dest)
+	
+	for class_folder in os.listdir(source):     # run appx rank pool for each video in all class_folder
+		video_files = search_files_recursively(
+			os.path.join(source, class_folder)
+		)
+		outfolder = os.path.join(dest, class_folder)
 
-        safe_mkdir(outfolder)
+		safe_mkdir(outfolder)
 
-        # take only the basename of each video url, clean name from dot and whitespace
-        # and use this basename for output image name
-        outdir = [
-            os.path.join(outfolder, clean_filename(get_basename(video_file)))
-            for video_file in video_files
-        ]
-        img_exts = [img_ext]* len(outdir)  # TODO: optimise this extension duplicating given every element is constant
+		# take only the basename of each video url, clean name from dot and whitespace
+		# and use this basename for output image name
+		outdir = [
+			os.path.join(outfolder, clean_filename(get_basename(video_file)))
+			for video_file in video_files
+		]
+		img_exts = [img_ext]* len(outdir)  # TODO: optimise this extension duplicating given every element is constant
+		buffer_sizes = [buffer_size] * len(outdir)
 
-        print(". Current class folder: %s, total:%d" %(class_folder, len(video_files)))
+		print(". Current class folder: %s, total:%d" %(class_folder, len(video_files)))
 
-        run_args = list(zip(video_files, outdir, img_exts))
-        results = Pool(n_jobs).starmap(
-            run_video_appx_rank_pooling, run_args
-        )
+		run_args = list(zip(video_files, outdir, img_exts, buffer_sizes))
+		results = Pool(n_jobs).starmap(
+			run_video_appx_rank_pooling, run_args
+		)
 
-        print(". Finished %s." % class_folder)
+		print(". Finished %s." % class_folder)
 
 
 if __name__ == '__main__':
 
-    import argparse
-    parser = argparse.ArgumentParser(description="PyTorch implementation of Temporal Segment Networks")
-    parser.add_argument('source', type=str)
-    parser.add_argument('dest', type=str)
-    parser.add_argument('-j', '--n_jobs', type=int, default=5)
-    parser.add_argument('--img_ext', type=str, default='.jpg')
-    args = parser.parse_args()
-    
-    video_appxRankPooling(
-        args.source,
-        args.dest,
-        args.n_jobs,
-        args.img_ext
-    )
-    
+	import argparse
+	parser = argparse.ArgumentParser(description="PyTorch implementation of Temporal Segment Networks")
+	parser.add_argument('source', type=str)
+	parser.add_argument('dest', type=str)
+	parser.add_argument('-j', '--n_jobs', type=int, default=5)
+	parser.add_argument('-b', '--buffer_size', type=int, default=24)
+	parser.add_argument('--img_ext', type=str, default='.jpg')
+	args = parser.parse_args()
+	
+	video_appxRankPooling(
+		args.source,
+		args.dest,
+		args.n_jobs,
+		args.buffer_size,
+		args.img_ext
+	)
+	
