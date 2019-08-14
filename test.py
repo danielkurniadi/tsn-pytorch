@@ -27,6 +27,7 @@ def options():
     parser.add_argument('modality', type=str, choices=['RGB', 'Flow', 'RGBDiff', 'ARP'])
     parser.add_argument('test_list', type=str)
     parser.add_argument('checkpoint', type=str)
+    parser.add_argument('--single', action='store_true')
     parser.add_argument('--arch', type=str, default="resnet101")
     parser.add_argument('--save_scores', type=str, default=None)
     parser.add_argument('--num_segments', type=int, default=3)
@@ -169,7 +170,6 @@ def main():
         GroupCenterCrop(input_size),
     ])
 
-    model = torch.nn.DataParallel(model, device_ids=args.gpus).cuda()
     checkpoint = torch.load(args.checkpoint)
     start_epoch = checkpoint['epoch']
     best_prec1 = checkpoint['best_prec1']
@@ -177,6 +177,7 @@ def main():
     state_dict = checkpoint['state_dict']
 
     # base_dict = {'.'.join(k.split('.')[1:]): v for k,v in list(checkpoint['state_dict'].items())}
+    model = torch.nn.DataParallel(model, device_ids=args.gpus).cuda()
     model.load_state_dict(state_dict)
 
     test_loader = torch.utils.data.DataLoader(
