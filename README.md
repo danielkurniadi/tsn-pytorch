@@ -145,3 +145,13 @@ CUDA_VISIBLE_DEVICES=1,2 python3 test.py <DATASET_NAME> Flow <SPLIT_FILES_FOR_TE
    <CHECKPOINT_PTH_FILE> --arch BNInception --flow_prefix <FLOW_PREFIX_OF_DATASET_FRAMES> --ext <.png|.jpg|.jpeg> \
    -b <BATCH_SIZE> --print_freq 1 --num_segments <NUM_SEGMENTS_PER_VIDEO>
 ```
+
+
+## Adding Custom Dataset:
+When adding custom dataset, you can name your dataset with certain namings, say "mydataset". 
+Then what you need to do:
+
+1. Go to `opts.py` files and look for argument parser: `modality` (line 4). Add you own dataset naming to the `choices` kwargs
+2. To train on custom dataset, look for `main()` function in `main.py`. Add if-else statement and speficy number of classes in custom dataset
+3. To test on custom dataset, look for `test()` function in `test.py`. Add if-esle statement and specify number of classes in custom dataset
+
