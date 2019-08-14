@@ -258,7 +258,7 @@ class Stack(object):
     def __call__(self, img_group):
         if img_group[0].mode == 'L':
             return np.concatenate([np.expand_dims(x, 2) for x in img_group], axis=2)
-        elif img_group[0].mode == 'RGB':
+        elif img_group[0].mode in ('RGB', 'ARP'):
             if self.roll:
                 # stack in time descending order
                 return np.concatenate([np.array(x)[:, :, ::-1] for x in img_group], axis=2)
