@@ -102,50 +102,107 @@ To train a new model, use the `main.py` script.
 The command to reproduce the original TSN experiments of RGB modality on UCF101 can be 
 
 ```bash
-CUDA_VISIBLE_DEVICES=1,2,3 python3 main.py hmdb51 Flow <hmdb51_rgb_train_list> <hmdb51_rgb_val_list>  \
+python3 main.py hmdb51 Flow <hmdb51_rgb_train_list> <hmdb51_rgb_val_list>  \
    --arch BNInception --num_segments 3 --ext .jpg -b 48 --img_prefix rgb --lr 0.001 --lr_steps 20 40 \
    --gd 20 --epochs 80 --eval-freq 1 --print-freq 5 --snapshot_pref hmdb51_bninception_rgb
+   --save_scores <SCORE_DIR> --consensus_type <CONSENSUS_TYPE>
 ```
 
-For flow models:
+For flow modality:
 
 ```bash
-CUDA_VISIBLE_DEVICES=1,2,3 python3 main.py hmdb51 Flow <hmdb51_flow_train_list> <hmdb51_flow_val_list>  \
+python3 main.py hmdb51 Flow <hmdb51_flow_train_list> <hmdb51_flow_val_list>  \
    --arch BNInception --num_segments 3 --ext .jpg -b 48 --flow_prefix flow --lr 0.001 --lr_steps 20 40 \
    --gd 20 --epochs 80 --eval-freq 1 --print-freq 5 --snapshot_pref hmdb51_bninception_flow
+   --save_scores <SCORE_DIR> --consensus_type <CONSENSUS_TYPE>
 ```
 
-For RGB-diff models:
+For RGB-diff modality:
 
 ```bash
-CUDA_VISIBLE_DEVICES=1,2,3 python3 main.py hmdb51 RGBDiff <hmdb51_rgbdiff_train_list> <hmdb51_rgbdiff_val_list>  \
+python3 main.py hmdb51 RGBDiff <hmdb51_rgbdiff_train_list> <hmdb51_rgbdiff_val_list>  \
    --arch BNInception --num_segments 3 --ext .jpg -b 48 --img_prefix rgb --lr 0.001 --lr_steps 20 40 \
-   --gd 20 --epochs 80 --eval-freq 1 --print-freq 5 --snapshot_pref hmdb51_bninception_ 
+   --gd 20 --epochs 80 --eval-freq 1 --print-freq 5 --snapshot_pref hmdb51_bninception_rgbdiff
+   --save_scores <SCORE_DIR> --consensus_type <CONSENSUS_TYPE>
 ```
 
-For ARP-diff
+For ARP modality:
+```bash
+python3 main.py hmdb51 ARP <hmdb51_arp_train_list> <hmdb51_arp_val_list>  \
+   --arch BNInception --num_segments 3 --ext .jpg -b 48 --img_prefix arp --lr 0.001 --lr_steps 20 40 \
+   --gd 20 --epochs 80 --eval-freq 1 --print-freq 5 --snapshot_pref hmdb51_bninception_arp
+   --save_scores <SCORE_DIR> --consensus_type <CONSENSUS_TYPE>
+```
+
+Arguments Description:
+
+* DATASET_NAME: name of your dataset
+* SPLIT_FILES_FOR_TEST: path to your test split file (not to be confused with validation)
+* CHECKPOINT_PTH_FILE: path to your checkpoint file (.pth or .pth.tar)
+* arch: architecture of CNN used, options [BNInception/Resnext101/InceptionV3]
+* ext: image extension where video frame is saved, options [.jpg/.png/.jpeg]
+* b, batch_size: mini-batch size
+* print_freq: frequency of printing loss, prec1 and prec5 in "iteration" unit
+* num_segments: number of segments per video
+* save_scores: directory to save score (.npy/.npz numpy file), scores are probability output for prediction inference
+* consensus_type: type of consensus to use, options [avg/identity]
+
+
+After training, there will checkpoints saved by pytorch, for example `ucf101_bninception_rgb_checkpoint.pth`.
+
 
 ## Testing
 
-After training, there will checkpoints saved by pytorch, for example `ucf101_bninception_rgb_checkpoint.pth`.
+### Testing the test split
 
 Use the following command to test its performance in the standard TSN testing protocol:
 
 ```bash
-CUDA_VISIBLE_DEVICES=1,2 python3 test.py <DATASET_NAME> RGB <SPLIT_FILES_FOR_TEST> \
+python3 test.py <DATASET_NAME> RGB <SPLIT_FILES_FOR_TEST> \
    <CHECKPOINT_PTH_FILE> --arch BNInception --img_prefix <IMG_PREFIX_OF_DATASET_FRAMES> --ext <.png|.jpg|.jpeg> \
-   -b <BATCH_SIZE> --print_freq 1 --num_segments <NUM_SEGMENTS_PER_VIDEO>
+   -b <BATCH_SIZE> --print_freq 1 --num_segments <NUM_SEGMENTS_PER_VIDEO> --save_scores <SCORE_DIR>
 
 ```
 
 Or for flow models:
  
 ```bash
-CUDA_VISIBLE_DEVICES=1,2 python3 test.py <DATASET_NAME> Flow <SPLIT_FILES_FOR_TEST> \
+python3 test.py <DATASET_NAME> Flow <SPLIT_FILES_FOR_TEST> \
    <CHECKPOINT_PTH_FILE> --arch BNInception --flow_prefix <FLOW_PREFIX_OF_DATASET_FRAMES> --ext <.png|.jpg|.jpeg> \
-   -b <BATCH_SIZE> --print_freq 1 --num_segments <NUM_SEGMENTS_PER_VIDEO>
+   -b <BATCH_SIZE> --print_freq 1 --num_segments <NUM_SEGMENTS_PER_VIDEO> --save_scores <SCORE_DIR>
 ```
 
+Argument Description:
+
+* DATASET_NAME: name of your dataset
+* SPLIT_FILES_FOR_TEST: path to your test split file (not to be confused with validation)
+* CHECKPOINT_PTH_FILE: path to your checkpoint file (.pth or .pth.tar)
+* arch: architecture of CNN used, options [BNInception/Resnext101/InceptionV3]
+* ext: image extension where video frame is saved, options [.jpg/.png/.jpeg]
+* b, batch_size: mini-batch size
+* print_freq: frequency of printing loss, prec1 and prec5 in "iteration" unit
+* num_segments: number of segments per video
+* save_scores: directory to save score (.npy/.npz numpy file), scores are probability output for prediction inference
+
+
+### Testing single video
+
+If you only need to test the prediction of a single dataset (video), use `test_model.py` instead.
+
+```bash
+python3 test_models.py <DATASET_NAME> <MODALITY> <VIDEO_FILE> <CHECKPOINT_PTH_FILE> \
+		--arch BNInception --save_scores <SCORE_DIR> --num_segments <NUM_SEGMENTS_PER_VIDEO>
+```
+
+Argument Description:
+
+* DATASET_NAME: name of your dataset
+* SPLIT_FILES_FOR_TEST: path to your test split file (not to be confused with validation)
+* CHECKPOINT_PTH_FILE: path to your checkpoint file (.pth or .pth.tar)
+* VIDEO_FILE: path to your video file to test
+* arch: architecture of CNN used, options [BNInception/Resnext101/InceptionV3]
+* num_segments: number of segments per video
+ 
 
 ## Adding Custom Dataset:
 When adding custom dataset, you can name your dataset with certain namings, say "mydataset". 
