@@ -102,31 +102,25 @@ To train a new model, use the `main.py` script.
 The command to reproduce the original TSN experiments of RGB modality on UCF101 can be 
 
 ```bash
-python main.py ucf101 RGB <ucf101_rgb_train_list> <ucf101_rgb_val_list> \
-   --arch BNInception --num_segments 3 \
-   --gd 20 --lr 0.001 --lr_steps 30 60 --epochs 80 \
-   -b 128 -j 8 --dropout 0.8 \
-   --snapshot_pref ucf101_bninception_ 
+CUDA_VISIBLE_DEVICES=1,2,3 python3 main.py hmdb51 Flow <hmdb51_rgb_train_list> <hmdb51_rgb_val_list>  \
+   --arch BNInception --num_segments 3 --ext .jpg -b 48 --img_prefix rgb --lr 0.001 --lr_steps 20 40 \
+   --gd 20 --epochs 80 --eval-freq 1 --print-freq 5 --snapshot_pref hmdb51_bninception_rgb
 ```
 
 For flow models:
 
 ```bash
-python main.py ucf101 Flow <ucf101_flow_train_list> <ucf101_flow_val_list> \
-   --arch BNInception --num_segments 3 \
-   --gd 20 --lr 0.001 --lr_steps 190 300 --epochs 340 \
-   -b 128 -j 8 --dropout 0.7 \
-   --snapshot_pref ucf101_bninception_ --flow_pref flow_  
+CUDA_VISIBLE_DEVICES=1,2,3 python3 main.py hmdb51 Flow <hmdb51_flow_train_list> <hmdb51_flow_val_list>  \
+   --arch BNInception --num_segments 3 --ext .jpg -b 48 --flow_prefix flow --lr 0.001 --lr_steps 20 40 \
+   --gd 20 --epochs 80 --eval-freq 1 --print-freq 5 --snapshot_pref hmdb51_bninception_flow
 ```
 
 For RGB-diff models:
 
 ```bash
-python main.py ucf101 RGBDiff <ucf101_rgb_train_list> <ucf101_rgb_val_list> \
-   --arch BNInception --num_segments 7 \
-   --gd 40 --lr 0.001 --lr_steps 80 160 --epochs 180 \
-   -b 128 -j 8 --dropout 0.8 \
-   --snapshot_pref ucf101_bninception_ 
+CUDA_VISIBLE_DEVICES=1,2,3 python3 main.py hmdb51 RGBDiff <hmdb51_rgbdiff_train_list> <hmdb51_rgbdiff_val_list>  \
+   --arch BNInception --num_segments 3 --ext .jpg -b 48 --img_prefix rgb --lr 0.001 --lr_steps 20 40 \
+   --gd 20 --epochs 80 --eval-freq 1 --print-freq 5 --snapshot_pref hmdb51_bninception_ 
 ```
 
 For ARP-diff
@@ -138,15 +132,16 @@ After training, there will checkpoints saved by pytorch, for example `ucf101_bni
 Use the following command to test its performance in the standard TSN testing protocol:
 
 ```bash
-python test_models.py ucf101 RGB <ucf101_rgb_val_list> ucf101_bninception_rgb_checkpoint.pth \
-   --arch BNInception --save_scores <score_file_name>
+CUDA_VISIBLE_DEVICES=1,2 python3 test.py <DATASET_NAME> RGB <SPLIT_FILES_FOR_TEST> \
+   <CHECKPOINT_PTH_FILE> --arch BNInception --img_prefix <IMG_PREFIX_OF_DATASET_FRAMES> --ext <.png|.jpg|.jpeg> \
+   -b <BATCH_SIZE> --print_freq 1 --num_segments <NUM_SEGMENTS_PER_VIDEO>
 
 ```
 
 Or for flow models:
  
 ```bash
-python test_models.py ucf101 Flow <ucf101_rgb_val_list> ucf101_bninception_flow_checkpoint.pth \
-   --arch BNInception --save_scores <score_file_name> --flow_pref flow_
-
+CUDA_VISIBLE_DEVICES=1,2 python3 test.py <DATASET_NAME> Flow <SPLIT_FILES_FOR_TEST> \
+   <CHECKPOINT_PTH_FILE> --arch BNInception --flow_prefix <FLOW_PREFIX_OF_DATASET_FRAMES> --ext <.png|.jpg|.jpeg> \
+   -b <BATCH_SIZE> --print_freq 1 --num_segments <NUM_SEGMENTS_PER_VIDEO>
 ```
