@@ -9,6 +9,80 @@ This is a reimplementation of temporal segment networks (TSN) in PyTorch. All se
 
 For optical flow extraction and video list generation, you still need to use the original [TSN codebase](https://github.com/yjxiong/temporal-segment-networks).
 
+
+## Dependencies
+
+* Python3 (3.5>=)
+* OpenCV Python (OpenCV contrib 3.4>=)
+* Pytorch (1.0>=)
+
+### Pip installation
+```
+pip3 install -r requirements.pip
+```
+
+
+## Preprocessing
+
+### Approximated Rank Pooling
+To convert video dataset to approximated rank pooled frames, use the `convert_to_ARP.py` scripts.
+
+The command to reproduce the Rank pooling preprocessing is as follows:
+
+```bash
+python3 <SOURCE_VIDEO_DIR> <OUTPUT_VIDEO_DIR> -j 8 --img_ext .jpg
+
+```
+
+Note that it assumes your video dataset folder is structured as follows:
+```
+|- dataset_dir/
+   |- class_folder_A
+      |- video0001.avi
+      |- video0002.avi
+
+      ...
+   |- class_folder_B
+      |- video0004.avi
+      |- video0005.avi
+      ...
+```
+
+The output will be populated by preprocessed frames. The folder structure of output directory is as follows:
+```
+|- dataset_dir/
+   |- class_folder_A
+         |- folder_of_video0001
+         |- folder_of_video0002
+            |- frame0001.png
+            |- frame0002.png
+            |- frame0003.png
+         ...
+   |- class_folder_B
+         |- folder_of_video0004
+         |- folder_of_video0005
+         ...
+```
+
+
+The above folder structure is common in data science.
+
+## Dense Flow
+
+To convert video dataset to approximated rank pooled frames, use the `denseFlow_gpu` executables. 
+You can download and install it from here: https://github.com/wanglimin/dense_flow
+
+
+## Spliting Dataset
+Assuming preprocessing has been done to your `OUTPUT_VIDEO_DIR`, you can run cross validation split, using `split_data.py` script.
+
+```
+python3 <OUTPUT_VIDEO_DIR> <FOLDER_FOR_SPLIT_FILES> --n_splits 5 --split_prefix mydata_split
+```
+
+Note that `<OUTPUT_VIDEO_DIR>` can be any dataset folder with the same structure you prefer to train on.
+
+
 ## Training
 
 To train a new model, use the `main.py` script.
@@ -42,6 +116,8 @@ python main.py ucf101 RGBDiff <ucf101_rgb_train_list> <ucf101_rgb_val_list> \
    -b 128 -j 8 --dropout 0.8 \
    --snapshot_pref ucf101_bninception_ 
 ```
+
+For ARP-diff
 
 ## Testing
 

@@ -8,11 +8,14 @@ from multiprocessing import current_process
 import numpy as np
 import cv2
 
+from multiprocessing import Pool, current_process
+
 # File utilities
 from utils import (
     safe_mkdir,
     search_files_recursively,
     get_basename,
+	clean_filename
 )
 
 
@@ -129,8 +132,7 @@ def video_appxRankPooling(
     
     for class_folder in os.listdir(source):     # run appx rank pool for each video in all class_folder
         video_files = search_files_recursively(
-            os.path.join(source, class_folder),
-            by_extensions = video_extensions
+            os.path.join(source, class_folder)
         )
         outfolder = os.path.join(dest, class_folder)
 
@@ -165,9 +167,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     video_appxRankPooling(
-        source,
-        dest,
-        n_jobs,
-        img_ext
+        args.source,
+        args.dest,
+        args.n_jobs,
+        args.img_ext
     )
     
