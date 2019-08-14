@@ -82,7 +82,7 @@ class TSNDataSet(data.Dataset):
         self._parse_list()
 
     def _load_image(self, directory, idx):
-        if self.modality == 'RGB' or self.modality == 'RGBDiff':
+        if self.modality == 'RGB' or self.modality == 'RGBDiff' or self.modality== 'ARP':
             return [Image.open(os.path.join(directory, self.image_tmpl.format(idx))).convert('RGB')]
         elif self.modality == 'Flow':
             if idx != 1: # WHAT IS THIS FOR???

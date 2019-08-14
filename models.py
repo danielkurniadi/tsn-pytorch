@@ -25,7 +25,7 @@ class TSN(nn.Module):
             raise ValueError("Only avg consensus can be used after Softmax")
 
         if new_length is None:
-            self.new_length = 1 if modality == "RGB" else 5
+            self.new_length = 1 if modality in ("RGB", "ARP") else 5
         else:
             self.new_length = new_length
 
@@ -244,7 +244,7 @@ TSN Configurations:
         ]
 
     def forward(self, input):
-        sample_len = (3 if self.modality == "RGB" else 2) * self.new_length
+        sample_len = (3 if self.modality in ("RGB", "ARP") else 2) * self.new_length
 
         if self.modality == 'RGBDiff':
             sample_len = 3 * self.new_length
@@ -264,7 +264,7 @@ TSN Configurations:
         return output.squeeze()
 
     def _get_diff(self, input, keep_rgb=False):
-        input_c = 3 if self.modality in ["RGB", "RGBDiff"] else 2
+        input_c = 3 if self.modality in ["RGB", "RGBDiff", "ARP"] else 2
         input_view = input.view((-1, self.num_segments, self.new_length + 1, input_c,) + input.size()[2:])
         if keep_rgb:
             new_data = input_view.clone()
@@ -349,7 +349,7 @@ TSN Configurations:
         return self.input_size * 256 // 224
 
     def get_augmentation(self):
-        if self.modality == 'RGB':
+        if self.modality in ('RGB', 'ARP'):
             return torchvision.transforms.Compose([GroupMultiScaleCrop(self.input_size, [1, .875, .75, .66]),
                                                    GroupRandomHorizontalFlip(is_flow=False)])
         elif self.modality == 'Flow':

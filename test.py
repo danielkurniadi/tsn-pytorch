@@ -24,7 +24,7 @@ def options():
     parser = argparse.ArgumentParser(
         description="Standard video-level testing")
     parser.add_argument('dataset', type=str, choices=['ucf101', 'hmdb51', 'kinetics', 'saag01'])
-    parser.add_argument('modality', type=str, choices=['RGB', 'Flow', 'RGBDiff'])
+    parser.add_argument('modality', type=str, choices=['RGB', 'Flow', 'RGBDiff', 'ARP'])
     parser.add_argument('test_list', type=str)
     parser.add_argument('checkpoint', type=str)
     parser.add_argument('--arch', type=str, default="resnet101")
