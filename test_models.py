@@ -62,7 +62,7 @@ def display_prediction():
 
 def run_video_appx_rank_pooling(
 	video_path,
-	buffer_size=24,
+	num_segments
 ):
 	"""Approximated Rank Pooling (ARP) runner for video input
 
@@ -70,9 +70,25 @@ def run_video_appx_rank_pooling(
 	"""
 	current = current_process()
 	cap = cv2.VideoCapture(video_path)
-	buffer = Buffer(buffer_size)
+
+	# Find OpenCV version
+	(major_ver, minor_ver, subminor_ver) = (cv2.__version__).split('.')
+		
+	# With webcam get(CV_CAP_PROP_FPS) does not work.
+	# Let's see for ourselves.	 
+	if int(major_ver)  < 3 :
+		num_frames = video.get(cv2.cv.CAP_PROP_FRAME_COUNT)
+		print ".. Frames per second using video.get(cv2.cv.CV_CAP_PROP_FPS): {0}".format(fps)
+	else :
+		num_frames = video.get(cv2.CAP_PROP_FRAME_COUNT)
+		print ".. Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(fps)
+
+	# Number of frames to capture
+    buffer_size = (num_frames+1)//3;
+
+	# Number of frames to capture
+	buffer = Buffer(num_frames)
 	success = True
-	count = 1
 
 	rank_pooled_frames = []
 	while success:
@@ -83,7 +99,6 @@ def run_video_appx_rank_pooling(
 			rank_pooled = cvApproxRankPooling(frames)
 			rank_pooled = Image.fromarray(np.uint8(rank_pooled))
 			rank_pooled_frames.append(rank_pooled)
-			count += 1
 
 		buffer.enqueue(frame)
 
@@ -91,19 +106,19 @@ def run_video_appx_rank_pooling(
 	return rank_pooled_frames
 
 def accuracy(output, target, topk=(1,)):
-    """Computes the precision@k for the specified values of k"""
-    maxk = max(topk)
-    batch_size = target.size(0)
+	"""Computes the precision@k for the specified values of k"""
+	maxk = max(topk)
+	batch_size = target.size(0)
 
-    _, pred = output.topk(maxk, 1, True, True)
-    pred = pred.t()
-    correct = pred.eq(target.view(1, -1).expand_as(pred))
+	_, pred = output.topk(maxk, 1, True, True)
+	pred = pred.t()
+	correct = pred.eq(target.view(1, -1).expand_as(pred))
 
-    res = []
-    for k in topk:
-        correct_k = correct[:k].view(-1).float().sum(0)
-        res.append(correct_k.mul_(100.0 / batch_size))
-    return res
+	res = []
+	for k in topk:
+		correct_k = correct[:k].view(-1).float().sum(0)
+		res.append(correct_k.mul_(100.0 / batch_size))
+	return res
 
 def sample_frames(frames, sample_indices, new_length):
 	sampled_frames = list()
@@ -125,8 +140,8 @@ def generate_sample_indices(num_frames, new_length, num_segments):
 def transforms_frames(frames, transformations):
 	return transformations(frames)
 
-def get_all_arp_frames(video_path):
-	rank_pooled_frames = run_video_appx_rank_pooling(video_path)
+def get_all_arp_frames(video_path, num_segments):
+	rank_pooled_frames = run_video_appx_rank_pooling(video_path, num_segments)
 	return rank_pooled_frames
 
 def get_group_transforms(args, model):
@@ -218,19 +233,19 @@ if __name__ == '__main__':
 	data_length = get_data_length(modality)
 
 	print("--------------------------------------------------------------------------")
-	print(">Model Init: %s" % args.arch)
+	print("> Model Init: %s" % args.arch)
 
 	model = init_model(num_classes, data_length, args)
 
 	print("--------------------------------------------------------------------------")
-	print(">Loading Video to Frames: %s" % video_path)
+	print("> Loading Video to Frames: %s" % video_path)
 
-	frames = get_all_arp_frames(video_path)
+	frames = get_all_arp_frames(video_path, num_segments)
 	num_frames = len(frames)
 	print(".. Frame shape: ", num_frames, frames[0].size)
 
 	print("--------------------------------------------------------------------------")
-	print(">Sampling Video Frames: sampling median of %d segments" % num_segments)
+	print("> Sampling Video Frames: sampling median of %d segments" % num_segments)
 	sample_indices = generate_sample_indices(num_frames, data_length, num_segments)
 	frames = sample_frames(frames, sample_indices, data_length)
 	print(".. Frame shape: ", len(frames), frames[0].size)
@@ -245,13 +260,13 @@ if __name__ == '__main__':
 	print(".. Transformed shape: ", processed_input.size())
 
 	print("--------------------------------------------------------------------------")
-	print(">Model Load Checkpoint: %s" % checkpoint)
+	print("> Model Load Checkpoint: %s" % checkpoint)
 	model = load_model_from_checkpoint(model, checkpoint, was_data_paralleled=True)
 	
 	torchsummary.summary(model, processed_input.size())
 
 	print("--------------------------------------------------------------------------")
-	print(">Prediction output: ")
+	print("> Prediction output: ")
 
 	output = model(processed_input)
 	_, pred = output.topk(1)
