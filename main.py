@@ -71,7 +71,7 @@ def main():
     else:
         normalize = IdentityTransform()
 
-    if args.modality == 'RGB':
+    if args.modality in ['RGB', 'ARP']:
         data_length = 1
     elif args.modality in ['Flow', 'RGBDiff']:
         data_length = 5
@@ -80,7 +80,8 @@ def main():
         TSNDataSet("", args.train_list, num_segments=args.num_segments,
                    new_length=data_length,
                    modality=args.modality,
-                   image_tmpl=args.img_prefix + "_{:05d}" + args.ext if args.modality in ["RGB", "RGBDiff"] else args.flow_prefix+"_{}_{:05d}" + args.ext,
+                   image_tmpl=args.img_prefix + "_{:05d}" + args.ext if args.modality in ["RGB", "RGBDiff", "ARP"] else args.flow_prefix+"_{}_{:05d}" + args.ext,
+                   random_shift=False,
                    transform=torchvision.transforms.Compose([
                        train_augmentation,
                        Stack(roll=args.arch == 'BNInception'),
@@ -96,7 +97,7 @@ def main():
         TSNDataSet("", args.val_list, num_segments=args.num_segments,
                     new_length=data_length,
                     modality=args.modality,
-                    image_tmpl=args.img_prefix + "_{:05d}" + args.ext if args.modality in ["RGB", "RGBDiff"] else args.flow_prefix+"_{}_{:05d}" + args.ext,
+                    image_tmpl=args.img_prefix + "_{:05d}" + args.ext if args.modality in ["RGB", "RGBDiff", "ARP"] else args.flow_prefix+"_{}_{:05d}" + args.ext,
                     random_shift=False,
                     transform=torchvision.transforms.Compose([
                         GroupScale(int(scale_size)),

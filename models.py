@@ -109,7 +109,7 @@ TSN Configurations:
                 self.input_mean = [128]
             elif self.modality == 'RGBDiff':
                 self.input_mean = self.input_mean * (1 + self.new_length)
-        
+
         elif base_model == 'inceptionv3':
             import tf_model_zoo
             if self.pretrained_on_kinetics:

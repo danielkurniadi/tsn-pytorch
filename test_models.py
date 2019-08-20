@@ -77,17 +77,16 @@ def run_video_appx_rank_pooling(
 	# With webcam get(CV_CAP_PROP_FPS) does not work.
 	# Let's see for ourselves.	 
 	if int(major_ver)  < 3 :
-		num_frames = video.get(cv2.cv.CAP_PROP_FRAME_COUNT)
-		print ".. Frames per second using video.get(cv2.cv.CV_CAP_PROP_FPS): {0}".format(fps)
+		num_frames = cap.get(cv2.cv.CAP_PROP_FRAME_COUNT)
 	else :
-		num_frames = video.get(cv2.CAP_PROP_FRAME_COUNT)
-		print ".. Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(fps)
+		num_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+	print(".. Number of Frames total in the video is {0}".format(num_frames))
 
 	# Number of frames to capture
-    buffer_size = (num_frames+1)//3;
+	buffer_size = (num_frames+1)//3
 
 	# Number of frames to capture
-	buffer = Buffer(num_frames)
+	buffer = Buffer(buffer_size)
 	success = True
 
 	rank_pooled_frames = []
@@ -136,13 +135,6 @@ def generate_sample_indices(num_frames, new_length, num_segments):
 	offsets = np.array([int(tick / 2.0 + tick * x) for x in range(num_segments)])
 
 	return offsets + 1
-
-def transforms_frames(frames, transformations):
-	return transformations(frames)
-
-def get_all_arp_frames(video_path, num_segments):
-	rank_pooled_frames = run_video_appx_rank_pooling(video_path, num_segments)
-	return rank_pooled_frames
 
 def get_group_transforms(args, model):
 	input_mean = model.input_mean
@@ -240,22 +232,15 @@ if __name__ == '__main__':
 	print("--------------------------------------------------------------------------")
 	print("> Loading Video to Frames: %s" % video_path)
 
-	frames = get_all_arp_frames(video_path, num_segments)
+	frames = run_video_appx_rank_pooling(video_path, num_segments)
 	num_frames = len(frames)
 	print(".. Frame shape: ", num_frames, frames[0].size)
-
-	print("--------------------------------------------------------------------------")
-	print("> Sampling Video Frames: sampling median of %d segments" % num_segments)
-	sample_indices = generate_sample_indices(num_frames, data_length, num_segments)
-	frames = sample_frames(frames, sample_indices, data_length)
-	print(".. Frame shape: ", len(frames), frames[0].size)
 
 	print("--------------------------------------------------------------------------")
 	print("Transforming Frames to dataset:")
 	
 	transformations = get_group_transforms(args, model)
-	processed_input = transforms_frames(frames, transformations)
-	
+	processed_input = transformations(frames)
 	
 	print(".. Transformed shape: ", processed_input.size())
 
